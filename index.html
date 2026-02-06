@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KwindaFlow • Junior Kwinda</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&amp;display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+        
+        :root {
+            --accent: 234 179 8;
+        }
+        
+        body {
+            font-family: 'Instrument Sans', sans-serif;
+        }
+        .logo-font {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+        
+        .glass {
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        
+        .nav-active {
+            background: linear-gradient(90deg, rgb(234 179 8), rgb(202 138 4));
+            color: #000;
+            font-weight: 700;
+        }
+        
+        .session-card {
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        
+        .session-card:hover {
+            transform: scale(1.03) translateY(-8px);
+            box-shadow: 0 30px 40px -15px rgb(234 179 8 / 0.3);
+        }
+        
+        .timeline-dot {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+        }
+        
+        .diary-entry {
+            transition: all 0.3s ease;
+        }
+    </style>
+</head>
+<body class="bg-zinc-950 text-zinc-100 overflow-hidden">
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <div class="w-80 bg-zinc-900 border-r border-zinc-800 flex flex-col">
+            <div class="p-8 border-b border-zinc-800">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 bg-gradient-to-br from-yellow-400 to-amber-600 rounded-3xl flex items-center justify-center text-4xl shadow-xl">🌟</div>
+                    <div>
+                        <span class="text-4xl font-bold tracking-tighter logo-font text-yellow-300">KwindaFlow</span>
+                        <div class="text-[10px] text-zinc-500 tracking-[3px] uppercase -mt-1">JUNIOR KWINDA EDITION</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Profile -->
+            <div class="p-6 border-b border-zinc-800">
+                <div onclick="showProfileModal()" class="flex items-center gap-4 cursor-pointer group">
+                    <div id="profile-avatar" class="w-14 h-14 bg-zinc-700 rounded-3xl flex items-center justify-center text-4xl transition-all group-hover:scale-110">👨🏾‍🎓</div>
+                    <div>
+                        <div id="profile-name" class="font-semibold text-xl">Junior Kwinda</div>
+                        <div id="profile-subtitle" class="text-emerald-400 text-sm">Matric 2026 • Top 1%</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Navigation -->
+            <div class="flex-1 py-6 px-4 space-y-2 overflow-auto" id="sidebar-nav">
+                <!-- Populated by JS -->
+            </div>
+            
+            <div class="p-6 border-t border-zinc-800">
+                <div class="flex items-center justify-between text-xs text-zinc-500">
+                    <div>Streak</div>
+                    <div id="streak-count" class="font-bold text-3xl text-orange-400">17</div>
+                </div>
+                <div class="h-2 bg-zinc-800 rounded-full mt-3 overflow-hidden">
+                    <div class="h-full w-[85%] bg-gradient-to-r from-orange-400 to-yellow-400"></div>
+                </div>
+                <div onclick="claimReward()" class="mt-4 text-center text-xs bg-zinc-800 hover:bg-amber-400 hover:text-zinc-900 transition-all py-3 rounded-2xl cursor-pointer">Claim daily reward</div>
+            </div>
+        </div>
+        
+        <!-- Main -->
+        <div class="flex-1 flex flex-col">
+            <!-- Top Bar -->
+            <div class="h-20 bg-zinc-900 border-b border-zinc-800 px-10 flex items-center justify-between">
+                <div class="flex items-center gap-12">
+                    <div id="tab-today" onclick="switchTab(0)" class="nav-item cursor-pointer text-xl font-semibold nav-active px-8 py-3 rounded-3xl">Today</div>
+                    <div id="tab-schedule" onclick="switchTab(1)" class="nav-item cursor-pointer text-xl font-semibold px-8 py-3 rounded-3xl">Schedule</div>
+                    <div id="tab-diary" onclick="switchTab(2)" class="nav-item cursor-pointer text-xl font-semibold px-8 py-3 rounded-3xl">Diary</div>
+                    <div id="tab-progress" onclick="switchTab(3)" class="nav-item cursor-pointer text-xl font-semibold px-8 py-3 rounded-3xl">Progress</div>
+                    <div id="tab-goals" onclick="switchTab(4)" class="nav-item cursor-pointer text-xl font-semibold px-8 py-3 rounded-3xl">Goals</div>
+                </div>
+                
+                <div class="flex items-center gap-10">
+                    <div id="live-clock" class="font-mono text-4xl font-bold text-yellow-300 tracking-widest"></div>
+                    
+                    <div class="flex items-center gap-6">
+                        <button onclick="toggleSound()" class="text-2xl text-zinc-400 hover:text-white"><i class="fa-solid fa-music"></i></button>
+                        <button onclick="requestNotifications()" class="relative text-2xl text-zinc-400 hover:text-white">
+                            <i class="fa-solid fa-bell"></i>
+                            <span id="notif-badge" class="absolute -top-1 -right-1 bg-red-500 text-[10px] px-1.5 rounded-full hidden">3</span>
+                        </button>
+                        <div onclick="showProfileModal()" class="flex items-center gap-3 cursor-pointer">
+                            <div id="top-name" class="font-medium">Junior Kwinda</div>
+                            <div class="w-10 h-10 bg-amber-500 text-zinc-900 rounded-2xl flex items-center justify-center text-3xl">👑</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Content Area -->
+            <div class="flex-1 overflow-auto p-10" id="content-area">
+                <!-- Tabs will be injected here by JS -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modals -->
+    <!-- Profile Modal -->
+    <div id="profile-modal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+        <div class="glass w-full max-w-lg rounded-3xl p-10">
+            <h2 class="text-3xl font-bold mb-8">Your Profile</h2>
+            <div class="space-y-8">
+                <div>
+                    <label class="block text-sm text-zinc-400 mb-2">Full Name</label>
+                    <input id="input-name" type="text" class="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-6 py-5 text-xl" value="Junior Kwinda">
+                </div>
+                <div>
+                    <label class="block text-sm text-zinc-400 mb-2">Grade &amp; Year</label>
+                    <input id="input-grade" type="text" class="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-6 py-5 text-xl" value="Grade 12 • 2026">
+                </div>
+                <div class="grid grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm text-zinc-400 mb-2">School</label>
+                        <input id="input-school" type="text" class="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-6 py-5" value="Prestige Secondary">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-zinc-400 mb-2">Motivation Quote</label>
+                        <textarea id="input-quote" class="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-6 py-5 h-24 resize-none">The sky is not the limit, it's just the view.</textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="flex gap-4 mt-12">
+                <button onclick="closeProfileModal()" class="flex-1 py-6 bg-zinc-800 rounded-3xl text-lg font-medium">Cancel</button>
+                <button onclick="saveProfile()" class="flex-1 py-6 bg-yellow-400 text-zinc-900 rounded-3xl text-lg font-bold">Save Profile</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Add Session / Diary Entry Modals handled in JS -->
+    
+    <script>
+        // ================================================
+        // CORE DATA
+        // ================================================
+        let user = {
+            name: "Junior Kwinda",
+            grade: "Grade 12 • 2026",
+            school: "Prestige Secondary",
+            quote: "The sky is not the limit, it's just the view.",
+            avatar: "👨🏾‍🎓"
+        };
+        
+        let subjects = [
+            {id:1, name:"Mathematics", color:"#3b82f6", emoji:"📐", daily:true},
+            {id:2, name:"Life Sciences", color:"#10b981", emoji:"🧬"},
+            {id:3, name:"CAT", color:"#8b5cf6", emoji:"💻"},
+            {id:4, name:"Business Studies", color:"#f59e0b", emoji:"💼"},
+            {id:5, name:"Life Orientation", color:"#ec4899", emoji:"🌱"},
+            {id:6, name:"Afrikaans", color:"#eab308", emoji:"🇿🇦"},
+            {id:7, name:"English", color:"#14b8a6", emoji:"📖"}
+        ];
+        
+        let sessions = [
+            {id:101, day:"daily", start:"16:00", duration:60, subjectId:1},
+            {id:102, day:"daily", start:"17:10", duration:50, subjectId:7},
+            {id:103, day:"daily", start:"18:10", duration:50, subjectId:6},
+            {id:104, day:"daily", start:"19:10", duration:60, subjectId:2},
+            {id:105, day:"daily", start:"20:20", duration:45, subjectId:4},
+            {id:106, day:"daily", start:"21:15", duration:45, subjectId:3},
+        ];
+        
+        let diaryEntries = [
+            {id:1, date:"2026-02-04", notes:"Killed Maths today. Finally understood calculus.", mood:5, subjects:[1,7], minutes:180},
+            {id:2, date:"2026-02-03", notes:"Life Sciences practical was fire. Got 98% on test.", mood:4, subjects:[2], minutes:140}
+        ];
+        
+        let goals = [
+            {subjectId:1, target:25, achieved:18},
+            {subjectId:2, target:15, achieved:12},
+            {subjectId:7, target:12, achieved:14}
+        ];
+        
+        let studyLog = {}; // date -> total minutes
+        
+        let streak = 17;
+        let soundEnabled = true;
+        
+        // ================================================
+        // UTILS
+        // ================================================
+        function saveAll() {
+            localStorage.setItem('kwindaUser', JSON.stringify(user));
+            localStorage.setItem('kwindaSessions', JSON.stringify(sessions));
+            localStorage.setItem('kwindaDiary', JSON.stringify(diaryEntries));
+            localStorage.setItem('kwindaGoals', JSON.stringify(goals));
+        }
+        
+        function loadAll() {
+            if (localStorage.getItem('kwindaUser')) user = JSON.parse(localStorage.getItem('kwindaUser'));
+            if (localStorage.getItem('kwindaSessions')) sessions = JSON.parse(localStorage.getItem('kwindaSessions'));
+            if (localStorage.getItem('kwindaDiary')) diaryEntries = JSON.parse(localStorage.getItem('kwindaDiary'));
+            if (localStorage.getItem('kwindaGoals')) goals = JSON.parse(localStorage.getItem('kwindaGoals'));
+        }
+        
+        function formatTime(time) {
+            return time;
+        }
+        
+        function addMinutes(time, mins) {
+            let [h,m] = time.split(':').map(Number);
+            m += mins;
+            h += Math.floor(m/60);
+            m %= 60;
+            return `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}`;
+        }
+        
+        // ================================================
+        // RENDER FUNCTIONS
+        // ================================================
+        function renderSidebar() {
+            const nav = document.getElementById('sidebar-nav');
+            nav.innerHTML = `
+                <div onclick="switchTab(0)" class="nav-item px-6 py-4 flex items-center gap-4 text-lg font-medium rounded-3xl cursor-pointer hover:bg-zinc-800"><i class="fa-solid fa-house w-6"></i> Dashboard</div>
+                <div onclick="switchTab(1)" class="nav-item px-6 py-4 flex items-center gap-4 text-lg font-medium rounded-3xl cursor-pointer hover:bg-zinc-800"><i class="fa-solid fa-calendar w-6"></i> Schedule</div>
+                <div onclick="switchTab(2)" class="nav-item px-6 py-4 flex items-center gap-4 text-lg font-medium rounded-3xl cursor-pointer hover:bg-zinc-800"><i class="fa-solid fa-book w-6"></i> Diary</div>
+                <div onclick="switchTab(3)" class="nav-item px-6 py-4 flex items-center gap-4 text-lg font-medium rounded-3xl cursor-pointer hover:bg-zinc-800"><i class="fa-solid fa-chart-line w-6"></i> Progress</div>
+                <div onclick="switchTab(4)" class="nav-item px-6 py-4 flex items-center gap-4 text-lg font-medium rounded-3xl cursor-pointer hover:bg-zinc-800"><i class="fa-solid fa-flag w-6"></i> Goals</div>
+                <div onclick="switchTab(5)" class="nav-item px-6 py-4 flex items-center gap-4 text-lg font-medium rounded-3xl cursor-pointer hover:bg-zinc-800"><i class="fa-solid fa-stopwatch w-6"></i> Pomodoro</div>
+            `;
+        }
+        
+        function renderToday() {
+            let html = `
+                <div class="max-w-6xl mx-auto">
+                    <div class="flex justify-between items-end mb-10">
+                        <div>
+                            <div class="text-6xl font-bold logo-font tracking-tighter">Good evening, ${user.name.split(' ')[0]} 👑</div>
+                            <div class="text-2xl text-zinc-400 mt-2">"${user.quote}"</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-emerald-400 text-2xl">Next session in <span id="next-time" class="font-mono text-5xl text-yellow-300">47 min</span></div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-12 gap-8">
+                        <!-- Current / Next Session -->
+                        <div class="col-span-8 bg-zinc-900 rounded-3xl p-10">
+                            <div class="flex justify-between">
+                                <div>
+                                    <div class="uppercase text-xs tracking-widest text-yellow-400">NOW STARTING</div>
+                                    <div class="text-5xl font-bold mt-3" id="now-subject">Mathematics</div>
+                                    <div class="text-2xl text-zinc-400" id="now-time">16:00 – 17:00</div>
+                                </div>
+                                <button onclick="startCurrentSession()" class="bg-emerald-500 hover:bg-emerald-600 px-14 py-6 rounded-3xl text-2xl font-bold">START SESSION</button>
+                            </div>
+                        </div>
+                        
+                        <!-- Quick Stats -->
+                        <div class="col-span-4 space-y-6">
+                            <div class="glass rounded-3xl p-8">
+                                <div class="flex justify-between items-center">
+                                    <div class="text-5xl font-bold text-orange-400" id="today-hours">4.2</div>
+                                    <div class="text-right">
+                                        <div class="text-sm text-zinc-400">Hours today</div>
+                                        <div class="text-emerald-400 text-xl">+1.8 from yesterday</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="glass rounded-3xl p-8">
+                                <div class="text-3xl font-bold">🔥 ${streak} day streak</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Today's Timeline -->
+                    <div class="mt-12">
+                        <div class="flex items-center justify-between mb-6">
+                            <div class="text-3xl font-semibold">Today's Flow</div>
+                            <button onclick="showAddSessionModal()" class="bg-zinc-800 hover:bg-zinc-700 px-8 py-4 rounded-3xl flex items-center gap-3"><i class="fa-solid fa-plus"></i> Add session</button>
+                        </div>
+                        <div id="today-timeline" class="space-y-8"></div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('content-area').innerHTML = html;
+            renderTodayTimeline();
+            updateNextSession();
+        }
+        
+        function renderTodayTimeline() {
+            const container = document.getElementById('today-timeline');
+            container.innerHTML = '';
+            
+            sessions.sort((a,b) => a.start.localeCompare(b.start)).forEach((s, i) => {
+                const sub = subjects.find(x => x.id === s.subjectId);
+                const end = addMinutes(s.start, s.duration);
+                
+                const div = document.createElement('div');
+                div.className = `session-card flex bg-zinc-900 rounded-3xl p-8 border-l-8 border-l-[${sub.color}]`;
+                div.style.borderLeftColor = sub.color;
+                div.innerHTML = `
+                    <div class="w-32">
+                        <div class="text-4xl font-bold font-mono">${s.start}</div>
+                        <div class="text-zinc-400">${end}</div>
+                    </div>
+                    <div class="flex-1 flex items-center gap-6">
+                        <div style="background:${sub.color}" class="w-20 h-20 rounded-3xl text-5xl flex items-center justify-center">${sub.emoji}</div>
+                        <div>
+                            <div class="text-3xl font-semibold">${sub.name}</div>
+                            <div class="text-emerald-400">${s.duration} min • Daily Maths included</div>
+                        </div>
+                    </div>
+                    <button onclick="completeSession(${s.id})" class="px-10 text-emerald-400 hover:text-emerald-500 text-2xl">✓ Done</button>
+                `;
+                container.appendChild(div);
+            });
+        }
+        
+        function updateNextSession() {
+            // Simple demo
+            document.getElementById('next-time') && (document.getElementById('next-time').textContent = "23 min");
+        }
+        
+        function renderSchedule() {
+            let html = `<div class="max-w-5xl mx-auto"><h1 class="text-5xl font-bold mb-10">Full Weekly Schedule</h1>`;
+            // Grid of days with sessions
+            html += `<div class="grid grid-cols-7 gap-6">`;
+            ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].forEach(day => {
+                html += `
+                    <div class="glass rounded-3xl p-6">
+                        <div class="text-center font-bold text-xl mb-6">${day}</div>
+                        <div class="space-y-4 text-sm">`;
+                sessions.forEach(s => {
+                    const sub = subjects.find(x => x.id === s.subjectId);
+                    html += `<div class="flex justify-between bg-zinc-800/50 px-5 py-4 rounded-2xl"><span>${s.start}</span><span class="font-medium">${sub.name}</span></div>`;
+                });
+                html += `</div></div>`;
+            });
+            html += `</div></div>`;
+            document.getElementById('content-area').innerHTML = html;
+        }
+        
+        function renderDiary() {
+            let html = `
+                <div class="max-w-4xl mx-auto">
+                    <div class="flex justify-between items-center mb-10">
+                        <h1 class="text-5xl font-bold">My Diary</h1>
+                        <button onclick="showNewDiaryModal()" class="bg-yellow-400 text-zinc-900 px-10 py-5 rounded-3xl font-bold">New Entry</button>
+                    </div>
+                    <div id="diary-list" class="space-y-6"></div>
+                </div>
+            `;
+            document.getElementById('content-area').innerHTML = html;
+            renderDiaryList();
+        }
+        
+        function renderDiaryList() {
+            const container = document.getElementById('diary-list');
+            container.innerHTML = '';
+            diaryEntries.sort((a,b) => b.date.localeCompare(a.date)).forEach(entry => {
+                const div = document.createElement('div');
+                div.className = "diary-entry glass rounded-3xl p-10";
+                div.innerHTML = `
+                    <div class="flex justify-between">
+                        <div class="text-2xl font-medium">${entry.date}</div>
+                        <div class="flex gap-2">${Array(entry.mood).fill('⭐').join('')}</div>
+                    </div>
+                    <div class="mt-6 text-xl leading-relaxed">${entry.notes}</div>
+                    <div class="mt-8 text-sm text-zinc-400">Studied: ${entry.minutes} min • ${entry.subjects.map(sid => subjects.find(s=>s.id===sid).name).join(', ')}</div>
+                `;
+                container.appendChild(div);
+            });
+        }
+        
+        function renderProgress() {
+            let html = `
+                <div class="max-w-6xl mx-auto">
+                    <h1 class="text-5xl font-bold mb-12">Progress Radar</h1>
+                    <div class="grid grid-cols-2 gap-12">
+                        <div class="glass rounded-3xl p-10">
+                            <canvas id="progress-chart"></canvas>
+                        </div>
+                        <div>
+                            <div class="text-3xl font-semibold mb-6">Subject Mastery</div>
+                            <div id="mastery-list" class="space-y-8"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('content-area').innerHTML = html;
+            
+            // Chart
+            setTimeout(() => {
+                new Chart(document.getElementById('progress-chart'), {
+                    type: 'radar',
+                    data: {
+                        labels: subjects.map(s => s.name),
+                        datasets: [{
+                            label: 'Mastery %',
+                            data: [92, 88, 95, 76, 81, 89, 94],
+                            backgroundColor: 'rgba(234,179,8,0.2)',
+                            borderColor: '#eab308',
+                            borderWidth: 4
+                        }]
+                    },
+                    options: { scales: { r: { grid: {color:'#3f3f46'}, ticks:{color:'#71717a'} } } }
+                });
+            }, 300);
+            
+            // Mastery list
+            const list = document.getElementById('mastery-list');
+            subjects.forEach(sub => {
+                const div = document.createElement('div');
+                div.className = "flex items-center gap-6";
+                div.innerHTML = `
+                    <div style="background:${sub.color}" class="w-16 h-16 rounded-3xl flex items-center justify-center text-5xl">${sub.emoji}</div>
+                    <div class="flex-1">
+                        <div class="font-semibold text-2xl">${sub.name}</div>
+                        <div class="h-3 bg-zinc-800 rounded-full mt-3"><div class="h-3 bg-yellow-400 rounded-full w-[${85 + Math.random()*15}%]"></div></div>
+                    </div>
+                    <div class="text-5xl font-bold text-yellow-300">89%</div>
+                `;
+                list.appendChild(div);
+            });
+        }
+        
+        function renderGoals() {
+            let html = `<div class="max-w-3xl mx-auto"><h1 class="text-5xl font-bold mb-10">2026 Goals</h1>`;
+            goals.forEach(g => {
+                const sub = subjects.find(s => s.id === g.subjectId);
+                html += `
+                    <div class="glass rounded-3xl p-8 mb-6 flex items-center gap-8">
+                        <div style="background:${sub.color}" class="w-24 h-24 rounded-3xl flex items-center justify-center text-6xl">${sub.emoji}</div>
+                        <div class="flex-1">
+                            <div class="text-3xl font-semibold">${sub.name}</div>
+                            <div class="mt-6 flex items-center gap-8">
+                                <div>
+                                    <div class="text-xs text-zinc-400">TARGET HOURS</div>
+                                    <div class="text-5xl font-bold">${g.target}</div>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="h-4 bg-zinc-800 rounded-full"><div class="h-4 bg-emerald-400 rounded-full w-[${Math.round(g.achieved/g.target*100)}%]"></div></div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-xs text-zinc-400">ACHIEVED</div>
+                                    <div class="text-5xl font-bold text-emerald-400">${g.achieved}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            html += `</div>`;
+            document.getElementById('content-area').innerHTML = html;
+        }
+        
+        function renderPomodoro() {
+            let html = `
+                <div class="flex items-center justify-center h-full">
+                    <div class="glass w-[480px] rounded-[4rem] p-16 text-center">
+                        <div class="text-8xl font-mono font-bold mb-12" id="pomo-display">25:00</div>
+                        <div onclick="togglePomo()" id="pomo-btn" class="mx-auto w-32 h-32 bg-yellow-400 text-zinc-900 rounded-3xl flex items-center justify-center text-6xl cursor-pointer active:scale-90 transition">▶</div>
+                        <div class="flex justify-center gap-12 mt-16 text-2xl">
+                            <button onclick="setPomoTime(25)" class="px-8 py-4 hover:bg-white/10 rounded-3xl">25</button>
+                            <button onclick="setPomoTime(50)" class="px-8 py-4 hover:bg-white/10 rounded-3xl">50</button>
+                            <button onclick="setPomoTime(5)" class="px-8 py-4 hover:bg-white/10 rounded-3xl">Break</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('content-area').innerHTML = html;
+        }
+        
+        // ================================================
+        // TAB SWITCHING
+        // ================================================
+        let currentTab = 0;
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('nav-active'));
+            if (document.getElementById('tab-today')) document.getElementById('tab-today').classList.add('nav-active');
+            
+            switch(tab) {
+                case 0: renderToday(); break;
+                case 1: renderSchedule(); break;
+                case 2: renderDiary(); break;
+                case 3: renderProgress(); break;
+                case 4: renderGoals(); break;
+                case 5: renderPomodoro(); break;
+            }
+        }
+        
+        // ================================================
+        // MODALS & ACTIONS
+        // ================================================
+        function showProfileModal() {
+            document.getElementById('profile-modal').classList.remove('hidden');
+            document.getElementById('input-name').value = user.name;
+            document.getElementById('input-grade').value = user.grade;
+            document.getElementById('input-school').value = user.school;
+            document.getElementById('input-quote').value = user.quote;
+        }
+        
+        function closeProfileModal() {
+            document.getElementById('profile-modal').classList.add('hidden');
+        }
+        
+        function saveProfile() {
+            user.name = document.getElementById('input-name').value || user.name;
+            user.grade = document.getElementById('input-grade').value || user.grade;
+            user.school = document.getElementById('input-school').value || user.school;
+            user.quote = document.getElementById('input-quote').value || user.quote;
+            
+            document.getElementById('top-name').textContent = user.name.split(' ')[0];
+            document.getElementById('profile-name').textContent = user.name;
+            closeProfileModal();
+            saveAll();
+            renderToday();
+        }
+        
+        function showAddSessionModal() {
+            alert("Pro session adder coming soon. For now, edit sessions in console 😉");
+        }
+        
+        function showNewDiaryModal() {
+            const notes = prompt("What happened today? Write your thoughts...");
+            if (!notes) return;
+            diaryEntries.push({
+                id: Date.now(),
+                date: new Date().toISOString().split('T')[0],
+                notes: notes,
+                mood: Math.floor(Math.random()*5)+3,
+                subjects: [1,2],
+                minutes: 180
+            });
+            saveAll();
+            renderDiary();
+        }
+        
+        function completeSession(id) {
+            alert("Session completed! +50xp 🔥");
+            streak++;
+            document.getElementById('streak-count') && (document.getElementById('streak-count').textContent = streak);
+            saveAll();
+        }
+        
+        function startCurrentSession() {
+            switchTab(5);
+        }
+        
+        function togglePomo() {
+            alert("Pomodoro running! (Demo mode)");
+        }
+        
+        function setPomoTime(mins) {
+            alert(`Timer set to ${mins} minutes`);
+        }
+        
+        function claimReward() {
+            alert("🎉 +100xp & unlocked 'Maths Legend' badge!");
+        }
+        
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            alert(soundEnabled ? "Focus music enabled" : "Music muted");
+        }
+        
+        function requestNotifications() {
+            Notification.requestPermission().then(p => {
+                if (p === "granted") alert("Notifications enabled! You will be reminded at 16:00");
+            });
+        }
+        
+        // ================================================
+        // CLOCK
+        // ================================================
+        function startClock() {
+            setInterval(() => {
+                const now = new Date();
+                let h = now.getHours();
+                const m = now.getMinutes().toString().padStart(2,'0');
+                const ampm = h >= 12 ? "PM" : "AM";
+                h = h % 12 || 12;
+                document.getElementById('live-clock').textContent = `${h}:${m} ${ampm}`;
+            }, 1000);
+        }
+        
+        // ================================================
+        // INIT
+        // ================================================
+        function init() {
+            loadAll();
+            document.getElementById('top-name').textContent = user.name.split(' ')[0];
+            document.getElementById('profile-name').textContent = user.name;
+            document.getElementById('profile-subtitle').textContent = user.grade;
+            
+            renderSidebar();
+            startClock();
+            switchTab(0);
+            
+            // Auto notification demo
+            setTimeout(() => {
+                if (Notification.permission === "granted") {
+                    new Notification("KwindaFlow", {
+                        body: "Mathematics starts in 10 minutes, Junior. Let's go!",
+                        icon: "https://via.placeholder.com/128/ffcc00/000000?text=KW"
+                    });
+                }
+            }, 8000);
+        }
+        
+        window.onload = init;
+    </script>
+</body>
+</html>
